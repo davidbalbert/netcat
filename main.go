@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/signal"
 )
 
 func lines(r io.Reader) <-chan string {
@@ -80,8 +79,6 @@ func main() {
 
 	remote := lines(conn)
 	local := lines(os.Stdin)
-	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, os.Interrupt)
 
 	for {
 		select {
@@ -93,9 +90,6 @@ func main() {
 			fmt.Print(s)
 		case s := <-local:
 			conn.Write([]byte(s))
-		case <-sigint:
-			fmt.Println()
-			return
 		}
 	}
 }
