@@ -31,11 +31,26 @@ func lines(r io.Reader) <-chan string {
 	return out
 }
 
+func listen1(network, address string) (net.Conn, error) {
+	listener, err := net.Listen(network, address)
+
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := listener.Accept()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+}
+
 func main() {
 	log.SetFlags(0)
 
-	var listen bool
-	flag.BoolVar(&listen, "l", false, "Listen")
+	listen := flag.Bool("l", false, "Listen")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -53,25 +68,15 @@ func main() {
 	}
 
 	var conn net.Conn
-	if listen {
-		listener, err := net.Listen("tcp", net.JoinHostPort(host, port))
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		conn, err = listener.Accept()
-
-		if err != nil {
-			log.Fatal(err)
-		}
+	var err error
+	if *listen {
+		conn, err = listen1("tcp", net.JoinHostPort(host, port))
 	} else {
-		var err error
 		conn, err = net.Dial("tcp", net.JoinHostPort(host, port))
+	}
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// TODO
