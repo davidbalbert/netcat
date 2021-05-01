@@ -75,6 +75,8 @@ func (conn *packetConnWithAddr) RemoteAddr() net.Addr {
 func (conn *packetConnWithAddr) Write(b []byte) (n int, err error) {
 	if conn.Addr == nil {
 		conn.sendBuffer = append(conn.sendBuffer, b)
+
+		return len(b), nil
 	}
 
 	return conn.WriteTo(b, conn.Addr)
@@ -142,10 +144,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO
-	// - add udp
-	// - handle write failure
-
 	remote := lines(conn)
 	local := lines(os.Stdin)
 
@@ -158,7 +156,6 @@ func main() {
 
 			fmt.Print(s)
 		case s := <-local:
-			// fmt.Println(conn.RemoteAddr())
 			_, err := conn.Write([]byte(s))
 
 			if err != nil {
