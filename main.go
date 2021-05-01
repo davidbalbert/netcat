@@ -11,8 +11,6 @@ import (
 	"os/signal"
 )
 
-// var listen = flag.Bool("l", false, "Listen")
-
 func lines(r io.Reader) <-chan string {
 	out := make(chan string)
 
@@ -36,6 +34,9 @@ func lines(r io.Reader) <-chan string {
 
 func main() {
 	log.SetFlags(0)
+
+	var listen bool
+	flag.BoolVar(&listen, "l", false, "Listen")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -52,19 +53,33 @@ func main() {
 		port = flag.Arg(1)
 	}
 
-	conn, err := net.Dial("tcp", net.JoinHostPort(host, port))
+	var conn net.Conn
+	if listen {
+		listener, err := net.Listen("tcp", net.JoinHostPort(host, port))
 
-	if err != nil {
-		log.Fatal(err)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		conn, err = listener.Accept()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		var err error
+		conn, err = net.Dial("tcp", net.JoinHostPort(host, port))
+
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// TODO
-	// - deal with control-c
-	// - add listen
+	// - add udp
 
 	remote := lines(conn)
 	local := lines(os.Stdin)
-
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt)
 
