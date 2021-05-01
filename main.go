@@ -67,12 +67,14 @@ func main() {
 		port = flag.Arg(1)
 	}
 
+	address := net.JoinHostPort(host, port)
+
 	var conn net.Conn
 	var err error
 	if *listen {
-		conn, err = listen1("tcp", net.JoinHostPort(host, port))
+		conn, err = listen1("tcp", address)
 	} else {
-		conn, err = net.Dial("tcp", net.JoinHostPort(host, port))
+		conn, err = net.Dial("tcp", address)
 	}
 
 	if err != nil {
