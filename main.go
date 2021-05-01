@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 )
 
 // var listen = flag.Bool("l", false, "Listen")
@@ -57,14 +58,29 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Tomorrow
-	// - make a read function that takes a reader and returns a chan string
-	// - don't buffer writing
-	// - select to see what's ready
+	// TODO
+	// - deal with control-c
+	// - add listen
 
-	c := lines(conn)
+	remote := lines(conn)
+	local := lines(os.Stdin)
 
-	for s := range c {
-		fmt.Print(s)
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt)
+
+	for {
+		select {
+		case s, ok := <-remote:
+			if !ok {
+				return
+			}
+
+			fmt.Print(s)
+		case s := <-local:
+			conn.Write([]byte(s))
+		case <-sigint:
+			fmt.Println()
+			return
+		}
 	}
 }
