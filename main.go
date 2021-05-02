@@ -76,7 +76,7 @@ func (conn *boundPacketConn) Write(b []byte) (n int, err error) {
 	return conn.WriteTo(b, conn.Addr)
 }
 
-func newPacketConnWithAddr(conn net.PacketConn) boundPacketConn {
+func newBoundPacketConn(conn net.PacketConn) boundPacketConn {
 	sendBuffer := make([][]byte, 0, 10)
 
 	return boundPacketConn{conn, nil, sendBuffer}
@@ -90,7 +90,7 @@ func listen1u(address string) (net.Conn, error) {
 		return nil, err
 	}
 
-	conn := newPacketConnWithAddr(pconn)
+	conn := newBoundPacketConn(pconn)
 
 	return &conn, nil
 }
