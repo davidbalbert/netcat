@@ -10,25 +10,19 @@ import (
 	"os"
 )
 
-func lines(r io.Reader) <-chan string {
-	out := make(chan string)
+func lines(c chan<- string, r io.Reader) {
+	br := bufio.NewReader(r)
 
-	go func() {
-		br := bufio.NewReader(r)
+	for {
+		s, err := br.ReadString(('\n'))
 
-		for {
-			s, err := br.ReadString(('\n'))
+		c <- s
 
-			out <- s
-
-			if err != nil {
-				close(out)
-				return
-			}
+		if err != nil {
+			close(c)
+			return
 		}
-	}()
-
-	return out
+	}
 }
 
 // Listens on address for the first connection, and returns it
@@ -144,8 +138,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	remote := lines(conn)
-	local := lines(os.Stdin)
+	remote := make(chan string)
+	local := make(chan string)
+
+	go lines(remote, conn)
+	go lines(local, os.Stdin)
 
 	for {
 		select {
