@@ -42,13 +42,13 @@ func listen1(address string) (net.Conn, error) {
 	return conn, nil
 }
 
-type packetConnWithAddr struct {
+type boundPacketConn struct {
 	net.PacketConn
 	net.Addr
 	sendBuffer [][]byte // holds messages that get sent before we have an Addr
 }
 
-func (conn *packetConnWithAddr) Read(b []byte) (n int, err error) {
+func (conn *boundPacketConn) Read(b []byte) (n int, err error) {
 	n, addr, err := conn.ReadFrom(b)
 
 	if conn.Addr == nil {
@@ -62,11 +62,11 @@ func (conn *packetConnWithAddr) Read(b []byte) (n int, err error) {
 	return n, err
 }
 
-func (conn *packetConnWithAddr) RemoteAddr() net.Addr {
+func (conn *boundPacketConn) RemoteAddr() net.Addr {
 	return conn.Addr
 }
 
-func (conn *packetConnWithAddr) Write(b []byte) (n int, err error) {
+func (conn *boundPacketConn) Write(b []byte) (n int, err error) {
 	if conn.Addr == nil {
 		conn.sendBuffer = append(conn.sendBuffer, b)
 
@@ -76,10 +76,10 @@ func (conn *packetConnWithAddr) Write(b []byte) (n int, err error) {
 	return conn.WriteTo(b, conn.Addr)
 }
 
-func newPacketConnWithAddr(conn net.PacketConn) packetConnWithAddr {
+func newPacketConnWithAddr(conn net.PacketConn) boundPacketConn {
 	sendBuffer := make([][]byte, 0, 10)
 
-	return packetConnWithAddr{conn, nil, sendBuffer}
+	return boundPacketConn{conn, nil, sendBuffer}
 }
 
 // Same as listen1 but for UDP
