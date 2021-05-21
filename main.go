@@ -1,29 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
 )
-
-func lines(c chan<- string, r io.Reader) {
-	br := bufio.NewReader(r)
-
-	for {
-		s, err := br.ReadString(('\n'))
-
-		c <- s
-
-		if err != nil {
-			close(c)
-			return
-		}
-	}
-}
 
 // Listens on address for the first connection, and returns it
 func listen1(address string) (net.Conn, error) {
@@ -34,6 +17,7 @@ func listen1(address string) (net.Conn, error) {
 	}
 
 	conn, err := listener.Accept()
+	defer listener.Close()
 
 	if err != nil {
 		return nil, err
@@ -103,7 +87,7 @@ func main() {
 
 	flag.Parse()
 
-	if flag.NArg() < 1 {
+	if flag.NArg() < 1 || flag.NArg() > 2 {
 		log.Fatalf("usage: %s hostname port\n", os.Args[0])
 	}
 
@@ -138,26 +122,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	remote := make(chan string)
-	local := make(chan string)
-
-	go lines(remote, conn)
-	go lines(local, os.Stdin)
-
-	for {
-		select {
-		case s, ok := <-remote:
-			if !ok {
-				return
-			}
-
-			fmt.Print(s)
-		case s := <-local:
-			_, err := conn.Write([]byte(s))
-
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
+	go io.Copy(conn, os.Stdin)
+	io.Copy(os.Stdout, conn)
 }
